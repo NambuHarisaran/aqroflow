@@ -37,6 +37,30 @@ Default key is **Right Ctrl**. Spacebar alone can't be used — it's needed for 
 
 Drag the button anywhere — position is remembered. Right-click → Exit to quit.
 
+## App window (Dashboard / Settings / About)
+
+Right-click the floating mic → **Open Dashboard** or **Settings**.
+
+- **Dashboard** — big Start/Stop button, live status, and stats (dictations, words, last transcript).
+- **Settings** —
+  - **Hotkey**: change the key (click *Change*, then press any key) and mode (push-to-talk vs toggle).
+  - **Model & language**: pick a speech model (Tiny/Base/Small, English or multilingual) and language, then *Apply / download*.
+  - **Widget position**: six anchor presets (corners + top/bottom center), or just drag the mic anywhere.
+  - **Launch on startup**: run Aqroflow automatically at Windows login.
+- **About** — version and credits.
+
+## Share it / build a distributable
+
+Publish a self-contained folder (no .NET needed on the target machine) and zip it:
+
+```
+dotnet publish Aqroflow\Aqroflow.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false
+```
+
+Zip the `bin\Release\net8.0-windows\win-x64\publish\` folder and share it (~69 MB zipped). The recipient unzips and runs `Aqroflow.exe`.
+
+> Single-file publish is intentionally **not** used: Whisper.net's native loader can't find the whisper DLL inside a packed single-file exe, so the app must ship as a folder (all files kept together).
+
 ## Tech
 
 - C# / WPF, .NET 8 — native Windows, low footprint (~50MB idle, ~200MB transcribing)

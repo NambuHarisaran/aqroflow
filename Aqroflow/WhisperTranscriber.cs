@@ -13,6 +13,12 @@ public class WhisperTranscriber : IDisposable
 
     public void Load(string modelPath, string language)
     {
+        // allow switching models: tear down any previously loaded one first
+        _processor?.Dispose();
+        _factory?.Dispose();
+        _processor = null;
+        _factory = null;
+
         _factory = WhisperFactory.FromPath(modelPath);
         _processor = _factory.CreateBuilder()
             .WithLanguage(language)

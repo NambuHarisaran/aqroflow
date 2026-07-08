@@ -24,8 +24,29 @@ public partial class MainWindow : Window
     private readonly WhisperTranscriber _transcriber = new();
     private readonly AppSettings _settings = AppSettings.Load();
     private GlobalHotkey? _hotkey;
+    private DashboardWindow? _dashboard;
     private WidgetState _state = WidgetState.Loading;
     private bool _isHovered;
+
+    // ---- public API used by the dashboard window ----
+
+    public struct Stats { public int Count; public int Words; public string Last; }
+
+    public AppSettings Settings => _settings;
+    public Stats CurrentStats { get; private set; } = new() { Last = "" };
+    public event Action<Stats>? StatsChanged;
+    public bool IsRecording => _state == WidgetState.Recording;
+    public string StatusText => _state switch
+    {
+        WidgetState.Loading => "● loading model…",
+        WidgetState.Idle => "● ready",
+        WidgetState.Recording => "● recording",
+        WidgetState.Transcribing => "● transcribing…",
+        _ => "● error"
+    };
+
+    private ModelInfo CurrentModel => ModelStore.GetById(_settings.Model);
+    private string EffectiveLanguage => CurrentModel.Multilingual ? _settings.Language : "en";
 
     private Storyboard? _pulseStoryboard;
     private Storyboard? _spinStoryboard;
@@ -48,7 +69,7 @@ public partial class MainWindow : Window
         _recorder.AutoStopped += () => Dispatcher.BeginInvoke(StopAndTranscribe);
         _recorder.LevelChanged += level => Dispatcher.BeginInvoke(() => UpdateLevel(level));
         BuildAnimations();
-        BuildHotkeyMenu();
+        BuildContextMenu();
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -89,35 +110,92 @@ public partial class MainWindow : Window
     }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
+        => await ReloadModelAsync(null);
+
+    /// <summary>
+    /// Downloads (if needed) and loads the model selected in settings, showing
+    /// progress on the widget and forwarding it to an optional external listener
+    /// (the dashboard). Safe to call repeatedly to switch models.
+    /// </summary>
+    public async Task ReloadModelAsync(IProgress<int>? external)
     {
         try
         {
             SetState(WidgetState.Loading);
+            var model = CurrentModel;
             var progress = new Progress<int>(p =>
             {
                 ProgressText.Text = $"{p}%";
                 ProgressText.Visibility = Visibility.Visible;
                 LogoPath.Visibility = Visibility.Collapsed;
+                external?.Report(p);
             });
-            await ModelStore.EnsureAsync(progress);
+            await ModelStore.EnsureAsync(model, progress);
             ProgressText.Visibility = Visibility.Collapsed;
             LogoPath.Visibility = Visibility.Visible;
-            await Task.Run(() => _transcriber.Load(ModelStore.ModelPath, _settings.Language));
+            await Task.Run(() => _transcriber.Load(ModelStore.PathFor(model), EffectiveLanguage));
             SetState(WidgetState.Idle);
         }
         catch (Exception ex)
         {
             SetState(WidgetState.Error);
             Pill.ToolTip = "Aqroflow — failed to load model: " + ex.Message;
+            throw;
         }
     }
 
+    public void ReloadHotkey()
+    {
+        _hotkey?.Dispose();
+        _hotkey = new GlobalHotkey(_settings.HotkeyVk);
+        _hotkey.Pressed += () => Dispatcher.BeginInvoke(OnHotkeyPressed);
+        _hotkey.Released += () => Dispatcher.BeginInvoke(OnHotkeyReleased);
+        _hotkey.Install();
+        if (_state == WidgetState.Idle) Pill.ToolTip = IdleTooltip();
+    }
+
+    /// <summary>Start/stop dictation from outside the widget (dashboard button).</summary>
+    public void ExternalToggle() => OnMicClicked();
+
     private void PositionWindow()
     {
-        var area = SystemParameters.WorkArea;
-        // default: bottom-center, Wispr Flow style
-        Left = _settings.Left ?? area.Left + (area.Width - Width) / 2;
-        Top = _settings.Top ?? area.Bottom - Height - 12;
+        if (_settings.PositionPreset != "custom")
+        {
+            var (l, t) = ComputePreset(_settings.PositionPreset);
+            Left = l; Top = t;
+        }
+        else
+        {
+            var area = SystemParameters.WorkArea;
+            Left = _settings.Left ?? area.Left + (area.Width - Width) / 2;
+            Top = _settings.Top ?? area.Bottom - Height - 12;
+        }
+    }
+
+    private (double left, double top) ComputePreset(string preset)
+    {
+        var a = SystemParameters.WorkArea;
+        const double m = 16;
+        double cx = a.Left + (a.Width - Width) / 2;
+        return preset switch
+        {
+            "bottomRight" => (a.Right - Width - m, a.Bottom - Height - m),
+            "bottomLeft" => (a.Left + m, a.Bottom - Height - m),
+            "topCenter" => (cx, a.Top + m),
+            "topRight" => (a.Right - Width - m, a.Top + m),
+            "topLeft" => (a.Left + m, a.Top + m),
+            _ => (cx, a.Bottom - Height - 12), // bottomCenter
+        };
+    }
+
+    /// <summary>Move the floating widget to a named screen anchor and persist it.</summary>
+    public void ApplyPositionPreset(string preset)
+    {
+        _settings.PositionPreset = preset;
+        var (l, t) = ComputePreset(preset);
+        Left = l; Top = t;
+        _settings.Left = l; _settings.Top = t;
+        _settings.Save();
     }
 
     // ---- hover expand ----
@@ -183,6 +261,7 @@ public partial class MainWindow : Window
         Pill.ReleaseMouseCapture();
         if (_moved)
         {
+            _settings.PositionPreset = "custom";
             _settings.Left = Left;
             _settings.Top = Top;
             _settings.Save();
@@ -225,7 +304,15 @@ public partial class MainWindow : Window
         {
             var text = await Task.Run(() => _transcriber.TranscribeAsync(samples));
             if (!string.IsNullOrWhiteSpace(text))
+            {
                 await TextInjector.PasteAsync(text);
+                var s = CurrentStats;
+                s.Count++;
+                s.Words += text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+                s.Last = text;
+                CurrentStats = s;
+                StatsChanged?.Invoke(s);
+            }
         }
         catch
         {
@@ -340,43 +427,35 @@ public partial class MainWindow : Window
         }
     }
 
-    // ---- context menu / hotkey mode ----
+    // ---- context menu ----
 
-    private MenuItem _pushItem = null!;
-    private MenuItem _toggleItem = null!;
-
-    private void BuildHotkeyMenu()
+    private void BuildContextMenu()
     {
-        string key = GlobalHotkey.KeyName(_settings.HotkeyVk);
-        _pushItem = new MenuItem { Header = $"Push-to-talk (hold {key})", IsCheckable = true };
-        _toggleItem = new MenuItem { Header = $"Toggle (tap {key})", IsCheckable = true };
-        _pushItem.Click += (_, _) => SetHotkeyMode("pushToTalk");
-        _toggleItem.Click += (_, _) => SetHotkeyMode("toggle");
-        RefreshModeChecks();
-
+        var dash = new MenuItem { Header = "Open Dashboard" };
+        dash.Click += (_, _) => OpenDashboard("dashboard");
+        var settings = new MenuItem { Header = "Settings" };
+        settings.Click += (_, _) => OpenDashboard("settings");
         var exit = new MenuItem { Header = "Exit Aqroflow" };
         exit.Click += Exit_Click;
 
         var menu = new ContextMenu();
-        menu.Items.Add(_pushItem);
-        menu.Items.Add(_toggleItem);
+        menu.Items.Add(dash);
+        menu.Items.Add(settings);
         menu.Items.Add(new Separator());
         menu.Items.Add(exit);
         Pill.ContextMenu = menu;
     }
 
-    private void SetHotkeyMode(string mode)
+    public void OpenDashboard(string page)
     {
-        _settings.HotkeyMode = mode;
-        _settings.Save();
-        RefreshModeChecks();
-        if (_state == WidgetState.Idle) Pill.ToolTip = IdleTooltip();
-    }
-
-    private void RefreshModeChecks()
-    {
-        _pushItem.IsChecked = _settings.HotkeyMode == "pushToTalk";
-        _toggleItem.IsChecked = _settings.HotkeyMode == "toggle";
+        if (_dashboard == null)
+        {
+            _dashboard = new DashboardWindow(this);
+            _dashboard.Closed += (_, _) => _dashboard = null;
+        }
+        _dashboard.Navigate(page);
+        if (!_dashboard.IsVisible) _dashboard.Show();
+        _dashboard.Activate();
     }
 
     private string IdleTooltip()

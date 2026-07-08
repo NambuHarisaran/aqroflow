@@ -15,6 +15,15 @@ public class AppSettings
     /// <summary>"pushToTalk" (hold to record) or "toggle" (tap to start/stop).</summary>
     public string HotkeyMode { get; set; } = "pushToTalk";
 
+    /// <summary>Model id from ModelStore.Catalog. Default "tiny.en".</summary>
+    public string Model { get; set; } = "tiny.en";
+
+    /// <summary>bottomCenter | bottomRight | bottomLeft | topCenter | topRight | topLeft | custom.</summary>
+    public string PositionPreset { get; set; } = "bottomCenter";
+
+    /// <summary>Start Aqroflow automatically on Windows login.</summary>
+    public bool LaunchOnStartup { get; set; } = false;
+
     private static string SettingsPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "Aqroflow", "settings.json");
