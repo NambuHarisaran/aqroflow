@@ -1,9 +1,11 @@
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Shapes;
 
 namespace Aqroflow;
 
@@ -11,13 +13,24 @@ public partial class MainWindow : Window
 {
     private enum WidgetState { Loading, Idle, Recording, Transcribing, Error }
 
+    private const double CircleWidth = 52;
+    private const double RecordingWidth = 128;
+    private const double HoverScale = 1.14;
+
+    private static readonly Color OrangeColor = (Color)ColorConverter.ConvertFromString("#FFF2A93C");
+    private static readonly Color DimColor = (Color)ColorConverter.ConvertFromString("#FF6E6E72");
+
     private readonly AudioRecorder _recorder = new();
     private readonly WhisperTranscriber _transcriber = new();
     private readonly AppSettings _settings = AppSettings.Load();
     private WidgetState _state = WidgetState.Loading;
+    private bool _isHovered;
 
     private Storyboard? _pulseStoryboard;
     private Storyboard? _spinStoryboard;
+
+    private Rectangle[] _bars = Array.Empty<Rectangle>();
+    private double[] _barLevels = Array.Empty<double>();
 
     // click-vs-drag tracking
     private bool _mouseDown;
@@ -29,6 +42,8 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         PositionWindow();
+        _bars = Waveform.Children.OfType<Rectangle>().ToArray();
+        _barLevels = new double[_bars.Length];
         _recorder.AutoStopped += () => Dispatcher.BeginInvoke(StopAndTranscribe);
         _recorder.LevelChanged += level => Dispatcher.BeginInvoke(() => UpdateLevel(level));
         BuildAnimations();
@@ -52,41 +67,71 @@ public partial class MainWindow : Window
             {
                 ProgressText.Text = $"{p}%";
                 ProgressText.Visibility = Visibility.Visible;
-                MicIcon.Visibility = Visibility.Collapsed;
+                LogoPath.Visibility = Visibility.Collapsed;
             });
             await ModelStore.EnsureAsync(progress);
             ProgressText.Visibility = Visibility.Collapsed;
-            MicIcon.Visibility = Visibility.Visible;
+            LogoPath.Visibility = Visibility.Visible;
             await Task.Run(() => _transcriber.Load(ModelStore.ModelPath, _settings.Language));
             SetState(WidgetState.Idle);
         }
         catch (Exception ex)
         {
             SetState(WidgetState.Error);
-            Btn.ToolTip = "Aqroflow — failed to load model: " + ex.Message;
+            Pill.ToolTip = "Aqroflow — failed to load model: " + ex.Message;
         }
     }
 
     private void PositionWindow()
     {
         var area = SystemParameters.WorkArea;
-        Left = _settings.Left ?? area.Right - Width - 24;
-        Top = _settings.Top ?? area.Bottom - Height - 24;
+        // default: bottom-center, Wispr Flow style
+        Left = _settings.Left ?? area.Left + (area.Width - Width) / 2;
+        Top = _settings.Top ?? area.Bottom - Height - 12;
+    }
+
+    // ---- hover expand ----
+
+    private void Pill_MouseEnter(object sender, MouseEventArgs e)
+    {
+        _isHovered = true;
+        if (_state == WidgetState.Idle) AnimateScale(HoverScale);
+    }
+
+    private void Pill_MouseLeave(object sender, MouseEventArgs e)
+    {
+        _isHovered = false;
+        if (_state == WidgetState.Idle) AnimateScale(1.0);
+    }
+
+    private void AnimateScale(double target)
+    {
+        var anim = new DoubleAnimation(target, TimeSpan.FromMilliseconds(160))
+        { EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut } };
+        PillScale.BeginAnimation(ScaleTransform.ScaleXProperty, anim);
+        PillScale.BeginAnimation(ScaleTransform.ScaleYProperty, anim.Clone());
+    }
+
+    private void AnimateWidth(double target)
+    {
+        var anim = new DoubleAnimation(target, TimeSpan.FromMilliseconds(200))
+        { EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut } };
+        Pill.BeginAnimation(WidthProperty, anim);
     }
 
     // ---- click / drag ----
 
-    private void Btn_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    private void Pill_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         _mouseDown = true;
         _moved = false;
         _downScreenPos = PointToScreen(e.GetPosition(this));
         _winStartLeft = Left;
         _winStartTop = Top;
-        Btn.CaptureMouse();
+        Pill.CaptureMouse();
     }
 
-    private void Btn_MouseMove(object sender, MouseEventArgs e)
+    private void Pill_MouseMove(object sender, MouseEventArgs e)
     {
         if (!_mouseDown) return;
         var screenPos = PointToScreen(e.GetPosition(this));
@@ -95,18 +140,17 @@ public partial class MainWindow : Window
         if (!_moved && Math.Abs(dxDevice) < 5 && Math.Abs(dyDevice) < 5) return;
         _moved = true;
 
-        // PointToScreen returns device pixels; Left/Top are DIPs
         var transform = PresentationSource.FromVisual(this)?.CompositionTarget?.TransformFromDevice;
         double scaleX = transform?.M11 ?? 1.0, scaleY = transform?.M22 ?? 1.0;
         Left = _winStartLeft + dxDevice * scaleX;
         Top = _winStartTop + dyDevice * scaleY;
     }
 
-    private void Btn_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    private void Pill_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         if (!_mouseDown) return;
         _mouseDown = false;
-        Btn.ReleaseMouseCapture();
+        Pill.ReleaseMouseCapture();
         if (_moved)
         {
             _settings.Left = Left;
@@ -132,7 +176,6 @@ public partial class MainWindow : Window
             case WidgetState.Recording:
                 StopAndTranscribe();
                 break;
-            // Loading/Transcribing: ignore clicks
         }
     }
 
@@ -165,10 +208,9 @@ public partial class MainWindow : Window
 
     private void BuildAnimations()
     {
-        // recording pulse: ring expands and fades, repeats
-        var opacityAnim = new DoubleAnimation(0.9, 0.0, TimeSpan.FromMilliseconds(900))
+        var opacityAnim = new DoubleAnimation(0.9, 0.0, TimeSpan.FromMilliseconds(1000))
         { RepeatBehavior = RepeatBehavior.Forever };
-        var scaleXAnim = new DoubleAnimation(1.0, 1.35, TimeSpan.FromMilliseconds(900))
+        var scaleXAnim = new DoubleAnimation(1.0, 1.5, TimeSpan.FromMilliseconds(1000))
         { RepeatBehavior = RepeatBehavior.Forever };
         var scaleYAnim = scaleXAnim.Clone();
 
@@ -184,7 +226,6 @@ public partial class MainWindow : Window
         _pulseStoryboard.Children.Add(scaleXAnim);
         _pulseStoryboard.Children.Add(scaleYAnim);
 
-        // transcribing spinner
         var spinAnim = new DoubleAnimation(0, 360, TimeSpan.FromMilliseconds(800))
         { RepeatBehavior = RepeatBehavior.Forever };
         Storyboard.SetTarget(spinAnim, Spinner);
@@ -199,50 +240,74 @@ public partial class MainWindow : Window
         _pulseStoryboard?.Stop();
         _spinStoryboard?.Stop();
         PulseRing.Opacity = 0;
+
         Spinner.Visibility = Visibility.Collapsed;
-        MicIcon.Visibility = Visibility.Visible;
+        Waveform.Visibility = Visibility.Collapsed;
+        LogoPath.Visibility = Visibility.Visible;
 
         switch (state)
         {
             case WidgetState.Loading:
-                SetGradient("#FF9E9E9E", "#FF616161");
-                Btn.ToolTip = "Aqroflow — loading model…";
+                LogoPath.Fill = new SolidColorBrush(DimColor);
+                AnimateWidth(CircleWidth);
+                Pill.ToolTip = "Aqroflow — loading model…";
                 break;
+
             case WidgetState.Idle:
-                SetGradient("#FF00C6A7", "#FF0072FF");
-                Btn.ToolTip = "Aqroflow — click to dictate";
+                LogoPath.Fill = new SolidColorBrush(OrangeColor);
+                SetGlow(Colors.Black, 14, 0.5);
+                AnimateWidth(CircleWidth);
+                AnimateScale(_isHovered ? HoverScale : 1.0);
+                Pill.ToolTip = "Aqroflow — click to dictate";
                 break;
+
             case WidgetState.Recording:
-                SetGradient("#FFE53935", "#FFB71C1C");
-                Btn.ToolTip = "Aqroflow — recording, click to stop";
+                LogoPath.Visibility = Visibility.Collapsed;
+                Waveform.Visibility = Visibility.Visible;
+                SetGlow(OrangeColor, 22, 0.75);
+                AnimateScale(1.0);
+                AnimateWidth(RecordingWidth);
                 _pulseStoryboard?.Begin();
+                Pill.ToolTip = "Aqroflow — recording, click to stop";
                 break;
+
             case WidgetState.Transcribing:
-                SetGradient("#FF7B1FA2", "#FF303F9F");
-                Btn.ToolTip = "Aqroflow — transcribing…";
-                MicIcon.Visibility = Visibility.Collapsed;
+                LogoPath.Visibility = Visibility.Collapsed;
                 Spinner.Visibility = Visibility.Visible;
+                SetGlow(OrangeColor, 16, 0.6);
+                AnimateScale(1.0);
+                AnimateWidth(CircleWidth);
                 _spinStoryboard?.Begin();
+                Pill.ToolTip = "Aqroflow — transcribing…";
                 break;
+
             case WidgetState.Error:
-                SetGradient("#FF757575", "#FF424242");
+                LogoPath.Fill = new SolidColorBrush(DimColor);
+                AnimateWidth(CircleWidth);
                 break;
         }
     }
 
-    private void SetGradient(string c1, string c2)
+    private void SetGlow(Color color, double blur, double opacity)
     {
-        Grad1.Color = (Color)ColorConverter.ConvertFromString(c1);
-        Grad2.Color = (Color)ColorConverter.ConvertFromString(c2);
+        PillShadow.Color = color;
+        PillShadow.BlurRadius = blur;
+        PillShadow.Opacity = opacity;
     }
 
     private void UpdateLevel(float rms)
     {
-        if (_state != WidgetState.Recording) return;
-        // subtle grow with voice level on top of the pulse ring
-        double scale = 1.0 + Math.Min(rms * 4, 0.15);
-        Btn.RenderTransformOrigin = new Point(0.5, 0.5);
-        Btn.RenderTransform = new ScaleTransform(scale, scale);
+        if (_state != WidgetState.Recording || _bars.Length == 0) return;
+        // map rms to bar heights with a center-weighted profile + smoothing
+        double norm = Math.Min(rms * 6.5, 1.0);
+        int mid = _bars.Length / 2;
+        for (int i = 0; i < _bars.Length; i++)
+        {
+            double distFromCenter = 1.0 - Math.Abs(i - mid) / (double)(mid + 1);
+            double target = 5 + norm * 22 * distFromCenter;
+            _barLevels[i] += (target - _barLevels[i]) * 0.5; // smooth
+            _bars[i].Height = Math.Max(4, _barLevels[i]);
+        }
     }
 
     private void Exit_Click(object sender, RoutedEventArgs e)
