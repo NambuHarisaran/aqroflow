@@ -23,6 +23,7 @@ public partial class MainWindow : Window
     private readonly AudioRecorder _recorder = new();
     private readonly WhisperTranscriber _transcriber = new();
     private readonly AppSettings _settings = AppSettings.Load();
+    private GlobalHotkey? _hotkey;
     private WidgetState _state = WidgetState.Loading;
     private bool _isHovered;
 
@@ -47,6 +48,7 @@ public partial class MainWindow : Window
         _recorder.AutoStopped += () => Dispatcher.BeginInvoke(StopAndTranscribe);
         _recorder.LevelChanged += level => Dispatcher.BeginInvoke(() => UpdateLevel(level));
         BuildAnimations();
+        BuildHotkeyMenu();
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -56,6 +58,34 @@ public partial class MainWindow : Window
         var handle = new WindowInteropHelper(this).Handle;
         int ex = GetWindowLong(handle, GWL_EXSTYLE);
         SetWindowLong(handle, GWL_EXSTYLE, ex | WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW);
+
+        // system-wide dictation key
+        _hotkey = new GlobalHotkey(_settings.HotkeyVk);
+        _hotkey.Pressed += () => Dispatcher.BeginInvoke(OnHotkeyPressed);
+        _hotkey.Released += () => Dispatcher.BeginInvoke(OnHotkeyReleased);
+        _hotkey.Install();
+    }
+
+    private void OnHotkeyPressed()
+    {
+        if (_settings.HotkeyMode == "toggle")
+        {
+            OnMicClicked();
+        }
+        else // pushToTalk: hold to record, no silence auto-stop
+        {
+            if (_state == WidgetState.Idle)
+            {
+                _recorder.Start(stopOnSilence: false);
+                SetState(WidgetState.Recording);
+            }
+        }
+    }
+
+    private void OnHotkeyReleased()
+    {
+        if (_settings.HotkeyMode == "pushToTalk" && _state == WidgetState.Recording)
+            StopAndTranscribe();
     }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -258,7 +288,7 @@ public partial class MainWindow : Window
                 SetGlow(Colors.Black, 14, 0.5);
                 AnimateWidth(CircleWidth);
                 AnimateScale(_isHovered ? HoverScale : 1.0);
-                Pill.ToolTip = "Aqroflow — click to dictate";
+                Pill.ToolTip = IdleTooltip();
                 break;
 
             case WidgetState.Recording:
@@ -310,8 +340,55 @@ public partial class MainWindow : Window
         }
     }
 
+    // ---- context menu / hotkey mode ----
+
+    private MenuItem _pushItem = null!;
+    private MenuItem _toggleItem = null!;
+
+    private void BuildHotkeyMenu()
+    {
+        string key = GlobalHotkey.KeyName(_settings.HotkeyVk);
+        _pushItem = new MenuItem { Header = $"Push-to-talk (hold {key})", IsCheckable = true };
+        _toggleItem = new MenuItem { Header = $"Toggle (tap {key})", IsCheckable = true };
+        _pushItem.Click += (_, _) => SetHotkeyMode("pushToTalk");
+        _toggleItem.Click += (_, _) => SetHotkeyMode("toggle");
+        RefreshModeChecks();
+
+        var exit = new MenuItem { Header = "Exit Aqroflow" };
+        exit.Click += Exit_Click;
+
+        var menu = new ContextMenu();
+        menu.Items.Add(_pushItem);
+        menu.Items.Add(_toggleItem);
+        menu.Items.Add(new Separator());
+        menu.Items.Add(exit);
+        Pill.ContextMenu = menu;
+    }
+
+    private void SetHotkeyMode(string mode)
+    {
+        _settings.HotkeyMode = mode;
+        _settings.Save();
+        RefreshModeChecks();
+        if (_state == WidgetState.Idle) Pill.ToolTip = IdleTooltip();
+    }
+
+    private void RefreshModeChecks()
+    {
+        _pushItem.IsChecked = _settings.HotkeyMode == "pushToTalk";
+        _toggleItem.IsChecked = _settings.HotkeyMode == "toggle";
+    }
+
+    private string IdleTooltip()
+    {
+        string key = GlobalHotkey.KeyName(_settings.HotkeyVk);
+        string gesture = _settings.HotkeyMode == "toggle" ? $"tap {key}" : $"hold {key}";
+        return $"Aqroflow — click or {gesture} to dictate";
+    }
+
     private void Exit_Click(object sender, RoutedEventArgs e)
     {
+        _hotkey?.Dispose();
         _recorder.Stop();
         _transcriber.Dispose();
         Application.Current.Shutdown();

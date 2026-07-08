@@ -15,6 +15,7 @@ public class AudioRecorder
     private DateTime _lastVoiceAt;
     private bool _hadSpeech;
     private bool _autoStopRaised;
+    private bool _stopOnSilence = true;
 
     private const float VoiceThreshold = 0.012f;
     private static readonly TimeSpan SilenceStop = TimeSpan.FromSeconds(1.8);
@@ -28,12 +29,17 @@ public class AudioRecorder
 
     public bool IsRecording => _waveIn != null;
 
-    public void Start()
+    /// <param name="stopOnSilence">
+    /// true = auto-stop after trailing silence (click/toggle). false = record until
+    /// Stop() is called (push-to-talk hold), with only the max-duration safety cap.
+    /// </param>
+    public void Start(bool stopOnSilence = true)
     {
         if (_waveIn != null) return;
         lock (_lock) _samples.Clear();
         _hadSpeech = false;
         _autoStopRaised = false;
+        _stopOnSilence = stopOnSilence;
         _startedAt = DateTime.UtcNow;
         _waveIn = new WaveInEvent
         {
@@ -84,7 +90,7 @@ public class AudioRecorder
             _lastVoiceAt = now;
         }
 
-        bool silenceTimeout = _hadSpeech && now - _lastVoiceAt > SilenceStop;
+        bool silenceTimeout = _stopOnSilence && _hadSpeech && now - _lastVoiceAt > SilenceStop;
         bool maxTimeout = now - _startedAt > MaxDuration;
         if ((silenceTimeout || maxTimeout) && !_autoStopRaised)
         {

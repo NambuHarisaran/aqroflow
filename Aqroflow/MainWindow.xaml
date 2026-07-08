@@ -34,11 +34,6 @@
                 <DropShadowEffect x:Name="PillShadow" BlurRadius="14" ShadowDepth="0"
                                   Color="#000000" Opacity="0.5"/>
             </Border.Effect>
-            <Border.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="Exit Aqroflow" Click="Exit_Click"/>
-                </ContextMenu>
-            </Border.ContextMenu>
 
             <Grid>
                 <!-- Aqro logo mark (idle / hover) -->

@@ -9,6 +9,12 @@ public class AppSettings
     public double? Top { get; set; }
     public string Language { get; set; } = "en";
 
+    /// <summary>Virtual-key code of the dictation hotkey. Default 0xA3 = Right Ctrl.</summary>
+    public int HotkeyVk { get; set; } = 0xA3;
+
+    /// <summary>"pushToTalk" (hold to record) or "toggle" (tap to start/stop).</summary>
+    public string HotkeyMode { get; set; } = "pushToTalk";
+
     private static string SettingsPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "Aqroflow", "settings.json");

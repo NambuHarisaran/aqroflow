@@ -6,10 +6,25 @@ A small floating mic button sits on your desktop. Click it, speak, and your word
 
 ## How it works
 
-1. Click the floating mic (the widget never steals focus — your caret stays where it was)
-2. Speak — recording auto-stops after ~1.8s of silence, or click again to stop manually
-3. Whisper (tiny.en, int8) transcribes locally in under a second
-4. Text is pasted at your caret via clipboard + Ctrl+V (your old clipboard is restored)
+1. Trigger dictation — **hold Right Ctrl** (default), or click the floating mic. The widget never steals focus, so your caret stays where it was.
+2. Speak — release the key to stop (push-to-talk), or in click/toggle mode it auto-stops after ~1.8s of silence.
+3. Whisper (tiny.en, int8) transcribes locally in under a second.
+4. Text is pasted at your caret via clipboard + Ctrl+V (your old clipboard is restored).
+
+## Hotkey
+
+Right-click the widget to switch between:
+
+- **Push-to-talk** (default) — hold the key, speak, release. Best for short bursts.
+- **Toggle** — tap to start, tap again to stop. Best for long dictation.
+
+Default key is **Right Ctrl**. Spacebar alone can't be used — it's needed for typing everywhere. To change the key, edit `%APPDATA%\Aqroflow\settings.json`:
+
+```json
+{ "HotkeyVk": 163, "HotkeyMode": "pushToTalk" }
+```
+
+`HotkeyVk` is a Windows virtual-key code (163 = Right Ctrl, 162 = Left Ctrl, 165 = Right Alt, 121 = F10, 19 = Pause, 145 = Scroll Lock).
 
 ## States
 
