@@ -1,36 +1,55 @@
 <Window x:Class="Aqroflow.DashboardWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Aqroflow" Width="760" Height="520"
+        Title="Aqroflow Dashboard" Width="840" Height="600"
         WindowStartupLocation="CenterScreen"
-        Background="#FF1B1B1E" Foreground="#FFEDEDED"
-        FontFamily="Segoe UI" FontSize="13">
+        Background="#FF0D0D11" Foreground="#FFEAEAEA"
+        FontFamily="Segoe UI" FontSize="14">
 
     <Window.Resources>
-        <SolidColorBrush x:Key="Accent" Color="#FFF2A93C"/>
-        <SolidColorBrush x:Key="Card" Color="#FF26262B"/>
-        <SolidColorBrush x:Key="Sub" Color="#FF9A9AA2"/>
+        <SolidColorBrush x:Key="Accent" Color="#FFF5A623"/>
+        <LinearGradientBrush x:Key="AccentGrad" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#FFF5A623" Offset="0"/>
+            <GradientStop Color="#FFFA6E32" Offset="1"/>
+        </LinearGradientBrush>
+        <SolidColorBrush x:Key="Card" Color="#FF15151C"/>
+        <SolidColorBrush x:Key="CardBorder" Color="#FF24242F"/>
+        <SolidColorBrush x:Key="Sub" Color="#FF8E8E9B"/>
+        <SolidColorBrush x:Key="Sidebar" Color="#FF101014"/>
 
-        <!-- nav button -->
+        <!-- Custom Path Icons Geometry -->
+        <Geometry x:Key="IconDash">M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z</Geometry>
+        <Geometry x:Key="IconSet">M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.73 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .43-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.49-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z</Geometry>
+        <Geometry x:Key="IconDict">M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z</Geometry>
+        <Geometry x:Key="IconSnip">M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z</Geometry>
+        <Geometry x:Key="IconHist">M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z</Geometry>
+        <Geometry x:Key="IconAbout">M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z</Geometry>
+
+        <!-- Premium Nav Button -->
         <Style x:Key="NavBtn" TargetType="RadioButton">
-            <Setter Property="Foreground" Value="#FFCFCFD4"/>
-            <Setter Property="Margin" Value="10,2"/>
-            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="Foreground" Value="#FFB8B8C2"/>
+            <Setter Property="Margin" Value="10,4"/>
+            <Setter Property="Padding" Value="16,12"/>
             <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Medium"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="b" CornerRadius="8" Background="Transparent" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter VerticalAlignment="Center"/>
+                        <Border x:Name="b" CornerRadius="10" Background="Transparent" Padding="{TemplateBinding Padding}">
+                            <StackPanel Orientation="Horizontal">
+                                <Path x:Name="Icon" Fill="{TemplateBinding Foreground}" Stretch="Uniform" Width="18" Height="18" Margin="0,0,14,0" Data="{TemplateBinding Tag}"/>
+                                <ContentPresenter VerticalAlignment="Center"/>
+                            </StackPanel>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="#FF33333A"/>
+                                <Setter TargetName="b" Property="Background" Value="#FF1E1E26"/>
                                 <Setter Property="Foreground" Value="{StaticResource Accent}"/>
+                                <Setter TargetName="Icon" Property="Fill" Value="{StaticResource AccentGrad}"/>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="#FF2E2E34"/>
+                                <Setter TargetName="b" Property="Background" Value="#FF1A1A22"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -38,17 +57,18 @@
             </Setter>
         </Style>
 
-        <!-- primary button -->
+        <!-- Primary Button -->
         <Style x:Key="Primary" TargetType="Button">
-            <Setter Property="Background" Value="{StaticResource Accent}"/>
-            <Setter Property="Foreground" Value="#FF1B1B1E"/>
+            <Setter Property="Background" Value="{StaticResource AccentGrad}"/>
+            <Setter Property="Foreground" Value="#FFFFFFFF"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="16,9"/>
+            <Setter Property="Padding" Value="18,10"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" CornerRadius="8" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="b" CornerRadius="10" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}"
+                                BorderThickness="1" BorderBrush="#33FFFFFF">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -64,22 +84,23 @@
             </Setter>
         </Style>
 
-        <!-- subtle/secondary button -->
+        <!-- Ghost Button -->
         <Style x:Key="Ghost" TargetType="Button">
-            <Setter Property="Background" Value="#FF33333A"/>
-            <Setter Property="Foreground" Value="#FFEDEDED"/>
-            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Background" Value="#FF1E1E26"/>
+            <Setter Property="Foreground" Value="#FFD6D6E0"/>
+            <Setter Property="Padding" Value="14,10"/>
             <Setter Property="Margin" Value="0,0,8,8"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" CornerRadius="7" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="b" CornerRadius="8" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}"
+                                BorderBrush="{StaticResource CardBorder}" BorderThickness="1">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="#FF3E3E46"/>
+                                <Setter TargetName="b" Property="Background" Value="#FF282832"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -87,169 +108,337 @@
             </Setter>
         </Style>
 
-        <Style TargetType="ComboBox">
-            <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="Height" Value="34"/>
+        <!-- Glass Card Border Style -->
+        <Style x:Key="GlassCard" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource Card}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Padding" Value="24"/>
+            <Setter Property="Margin" Value="0,0,0,20"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="12" ShadowDepth="4" Opacity="0.15" Color="#000000"/>
+                </Setter.Value>
+            </Setter>
         </Style>
+
+        <!-- Input Style -->
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="#FF18181E"/>
+            <Setter Property="Foreground" Value="#FFEDEDED"/>
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                CornerRadius="8">
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="true">
+                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource Accent}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
     </Window.Resources>
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="220"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
         <!-- sidebar -->
-        <Border Grid.Column="0" Background="#FF222226">
+        <Border Grid.Column="0" Background="{StaticResource Sidebar}">
             <DockPanel>
-                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="18,20,0,18">
-                    <Path Fill="{StaticResource Accent}" Stretch="Uniform" Width="22" Height="20"
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="24,28,0,28">
+                    <Path Fill="{StaticResource AccentGrad}" Stretch="Uniform" Width="26" Height="24"
                           Data="M0,0 H295 V265 H140 V155 H0 Z"/>
-                    <TextBlock Text="Aqroflow" FontSize="18" FontWeight="SemiBold"
-                               Foreground="#FFEDEDED" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                    <TextBlock Text="Aqroflow" FontSize="20" FontWeight="Bold"
+                               Foreground="#FFFFFFFF" VerticalAlignment="Center" Margin="14,0,0,0"/>
                 </StackPanel>
 
-                <StackPanel DockPanel.Dock="Bottom" Margin="18,0,18,16">
-                    <TextBlock x:Name="StatusDot" Text="● loading…" Foreground="{StaticResource Sub}" FontSize="12"/>
+                <StackPanel DockPanel.Dock="Bottom" Margin="24,0,24,20">
+                    <TextBlock x:Name="StatusDot" Text="● loading…" Foreground="{StaticResource Sub}" FontSize="13" FontWeight="SemiBold"/>
                 </StackPanel>
 
                 <StackPanel>
-                    <RadioButton x:Name="NavDashboard" Style="{StaticResource NavBtn}" Content="Dashboard" IsChecked="True" Checked="Nav_Checked"/>
-                    <RadioButton x:Name="NavSettings"  Style="{StaticResource NavBtn}" Content="Settings"  Checked="Nav_Checked"/>
-                    <RadioButton x:Name="NavAbout"     Style="{StaticResource NavBtn}" Content="About"     Checked="Nav_Checked"/>
+                    <RadioButton x:Name="NavDashboard"  Style="{StaticResource NavBtn}" Content="Dashboard"  Tag="{StaticResource IconDash}" IsChecked="True" Checked="Nav_Checked"/>
+                    <RadioButton x:Name="NavSettings"   Style="{StaticResource NavBtn}" Content="Settings"   Tag="{StaticResource IconSet}" Checked="Nav_Checked"/>
+                    <RadioButton x:Name="NavDictionary" Style="{StaticResource NavBtn}" Content="Dictionary" Tag="{StaticResource IconDict}" Checked="Nav_Checked"/>
+                    <RadioButton x:Name="NavSnippets"   Style="{StaticResource NavBtn}" Content="Snippets"   Tag="{StaticResource IconSnip}" Checked="Nav_Checked"/>
+                    <RadioButton x:Name="NavHistory"    Style="{StaticResource NavBtn}" Content="History"    Tag="{StaticResource IconHist}" Checked="Nav_Checked"/>
+                    <RadioButton x:Name="NavAbout"      Style="{StaticResource NavBtn}" Content="About"      Tag="{StaticResource IconAbout}" Checked="Nav_Checked"/>
                 </StackPanel>
             </DockPanel>
         </Border>
 
         <!-- content -->
-        <Grid Grid.Column="1" Margin="28,24">
-
+        <Grid Grid.Column="1" Margin="32,28">
             <!-- ===== DASHBOARD ===== -->
             <StackPanel x:Name="PageDashboard">
-                <TextBlock Text="Dashboard" FontSize="22" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                <TextBlock Text="Local voice dictation — your audio never leaves this device."
-                           Foreground="{StaticResource Sub}" Margin="0,0,0,20"/>
+                <TextBlock Text="Dashboard" FontSize="26" FontWeight="Bold" Margin="0,0,0,4"/>
+                <TextBlock Text="Local voice dictation — your audio never leaves this device." Foreground="{StaticResource Sub}" Margin="0,0,0,28"/>
 
-                <Border Background="{StaticResource Card}" CornerRadius="12" Padding="24" Margin="0,0,0,16">
-                    <StackPanel HorizontalAlignment="Center">
-                        <Button x:Name="RecordBtn" Style="{StaticResource Primary}" Width="180" Height="46"
-                                Content="Start dictation" Click="RecordBtn_Click"/>
-                        <TextBlock x:Name="HintText" Text="or hold Right Ctrl anywhere"
-                                   Foreground="{StaticResource Sub}" HorizontalAlignment="Center" Margin="0,12,0,0"/>
+                <Border Style="{StaticResource GlassCard}">
+                    <StackPanel HorizontalAlignment="Center" Margin="0,16">
+                        <Button x:Name="RecordBtn" Style="{StaticResource Primary}" Width="200" Height="52" Content="Start dictation" Click="RecordBtn_Click" FontSize="15"/>
+                        <TextBlock x:Name="HintText" Text="or hold Right Ctrl anywhere" Foreground="{StaticResource Sub}" Margin="0,14,0,0" HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Border>
 
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <Border Grid.Column="0" Background="{StaticResource Card}" CornerRadius="12" Padding="18" Margin="0,0,8,0">
+                <UniformGrid Columns="2">
+                    <Border Style="{StaticResource GlassCard}" Margin="0,0,10,0" Padding="20">
                         <StackPanel>
-                            <TextBlock x:Name="StatCount" Text="0" FontSize="26" FontWeight="Bold" Foreground="{StaticResource Accent}"/>
-                            <TextBlock Text="dictations" Foreground="{StaticResource Sub}"/>
+                            <TextBlock Text="Lifetime Dictated" Foreground="{StaticResource Sub}" FontSize="13" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="StatWords" Text="0 words" FontSize="24" FontWeight="Bold" Foreground="#FFFFFFFF" Margin="0,6,0,0"/>
+                            <TextBlock x:Name="StatCount" Text="in 0 sessions" Foreground="{StaticResource Sub}" FontSize="13" Margin="0,2,0,0"/>
                         </StackPanel>
                     </Border>
-                    <Border Grid.Column="1" Background="{StaticResource Card}" CornerRadius="12" Padding="18" Margin="8,0">
+                    <Border Style="{StaticResource GlassCard}" Margin="10,0,0,0" Padding="20">
                         <StackPanel>
-                            <TextBlock x:Name="StatWords" Text="0" FontSize="26" FontWeight="Bold" Foreground="{StaticResource Accent}"/>
-                            <TextBlock Text="words" Foreground="{StaticResource Sub}"/>
+                            <TextBlock Text="Active Speech Model" Foreground="{StaticResource Sub}" FontSize="13" FontWeight="SemiBold"/>
+                            <TextBlock x:Name="StatModel" Text="tiny.en" FontSize="24" FontWeight="Bold" Foreground="#FFF5A623" Margin="0,6,0,0"/>
+                            <TextBlock Text="Ready for dictation" Foreground="{StaticResource Sub}" FontSize="13" Margin="0,2,0,0"/>
                         </StackPanel>
                     </Border>
-                    <Border Grid.Column="2" Background="{StaticResource Card}" CornerRadius="12" Padding="18" Margin="8,0,0,0">
-                        <StackPanel>
-                            <TextBlock x:Name="StatModel" Text="tiny.en" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource Accent}" TextTrimming="CharacterEllipsis"/>
-                            <TextBlock Text="model" Foreground="{StaticResource Sub}"/>
-                        </StackPanel>
-                    </Border>
-                </Grid>
-
-                <TextBlock Text="Last transcript" Foreground="{StaticResource Sub}" Margin="0,20,0,6"/>
-                <Border Background="{StaticResource Card}" CornerRadius="10" Padding="14" MinHeight="60">
-                    <TextBlock x:Name="LastText" Text="—" TextWrapping="Wrap"/>
-                </Border>
+                </UniformGrid>
             </StackPanel>
 
             <!-- ===== SETTINGS ===== -->
             <ScrollViewer x:Name="PageSettings" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
-                <StackPanel>
-                    <TextBlock Text="Settings" FontSize="22" FontWeight="SemiBold" Margin="0,0,0,20"/>
+                <StackPanel Margin="0,0,12,0">
+                    <TextBlock Text="Settings" FontSize="26" FontWeight="Bold" Margin="0,0,0,24"/>
 
-                    <TextBlock Text="Hotkey" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                    <Border Background="{StaticResource Card}" CornerRadius="12" Padding="18" Margin="0,0,0,18">
+                    <TextBlock Text="Activation &amp; Hotkey" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,12" Foreground="#FFEAEAEA"/>
+                    <Border Style="{StaticResource GlassCard}">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Key:" VerticalAlignment="Center" Foreground="{StaticResource Sub}" Width="60"/>
-                                <Border Background="#FF33333A" CornerRadius="6" Padding="12,6">
-                                    <TextBlock x:Name="KeyLabel" Text="Right Ctrl" FontWeight="SemiBold"/>
-                                </Border>
-                                <Button x:Name="ChangeKeyBtn" Style="{StaticResource Ghost}" Content="Change" Margin="12,0,0,0" Click="ChangeKey_Click"/>
+                                <TextBlock Text="Hotkey:" VerticalAlignment="Center" Foreground="{StaticResource Sub}" Width="65"/>
+                                <TextBlock x:Name="KeyLabel" Text="Right Ctrl" VerticalAlignment="Center" FontWeight="Bold" Foreground="{StaticResource Accent}" FontSize="16"/>
+                                <Button x:Name="ChangeKeyBtn" Style="{StaticResource Ghost}" Content="Change" Margin="16,0,0,0" Click="ChangeKey_Click"/>
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                                <TextBlock Text="Mode:" VerticalAlignment="Center" Foreground="{StaticResource Sub}" Width="60"/>
-                                <RadioButton x:Name="ModePush" Content="Push-to-talk (hold)" Foreground="#FFEDEDED" VerticalAlignment="Center" Margin="0,0,20,0" Checked="Mode_Checked"/>
-                                <RadioButton x:Name="ModeToggle" Content="Toggle (tap)" Foreground="#FFEDEDED" VerticalAlignment="Center" Checked="Mode_Checked"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
-
-                    <TextBlock Text="Model &amp; language" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                    <Border Background="{StaticResource Card}" CornerRadius="12" Padding="18" Margin="0,0,0,18">
-                        <StackPanel>
-                            <TextBlock Text="Speech model" Foreground="{StaticResource Sub}" Margin="0,0,0,6"/>
-                            <ComboBox x:Name="ModelCombo" SelectionChanged="ModelCombo_Changed"/>
-                            <TextBlock Text="Language" Foreground="{StaticResource Sub}" Margin="0,14,0,6"/>
-                            <ComboBox x:Name="LangCombo"/>
                             <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
-                                <Button x:Name="ApplyModelBtn" Style="{StaticResource Primary}" Content="Apply / download" Click="ApplyModel_Click"/>
-                                <ProgressBar x:Name="ModelProgress" Width="160" Height="10" Margin="14,0,0,0" VerticalAlignment="Center"
-                                             Minimum="0" Maximum="100" Visibility="Collapsed" Foreground="{StaticResource Accent}"/>
-                                <TextBlock x:Name="ModelStatus" VerticalAlignment="Center" Margin="12,0,0,0" Foreground="{StaticResource Sub}"/>
+                                <TextBlock Text="Mode:" VerticalAlignment="Center" Foreground="{StaticResource Sub}" Width="65"/>
+                                <RadioButton x:Name="ModePush" Content="Push-to-talk (hold)" Foreground="#FFEAEAEA" VerticalAlignment="Center" Margin="0,0,24,0" Checked="Mode_Checked"/>
+                                <RadioButton x:Name="ModeToggle" Content="Toggle (tap)" Foreground="#FFEAEAEA" VerticalAlignment="Center" Checked="Mode_Checked"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
 
-                    <TextBlock Text="Floating widget position" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                    <Border Background="{StaticResource Card}" CornerRadius="12" Padding="18" Margin="0,0,0,18">
+                    <TextBlock Text="Model &amp; Language" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,12" Foreground="#FFEAEAEA"/>
+                    <Border Style="{StaticResource GlassCard}">
+                        <StackPanel>
+                            <TextBlock Text="Speech model" Foreground="{StaticResource Sub}" Margin="0,0,0,8"/>
+                            <ComboBox x:Name="ModelCombo" SelectionChanged="ModelCombo_Changed" Background="#FF18181E" Foreground="Black" Padding="8,6" Height="36"/>
+                            <TextBlock Text="Language" Foreground="{StaticResource Sub}" Margin="0,18,0,8"/>
+                            <ComboBox x:Name="LangCombo" Background="#FF18181E" Foreground="Black" Padding="8,6" Height="36"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                                <Button x:Name="ApplyModelBtn" Style="{StaticResource Primary}" Content="Apply &amp; Download" Click="ApplyModel_Click"/>
+                                <ProgressBar x:Name="ModelProgress" Width="160" Height="6" Margin="16,0,0,0" VerticalAlignment="Center" Minimum="0" Maximum="100" Visibility="Collapsed" Foreground="{StaticResource Accent}"/>
+                                <TextBlock x:Name="ModelStatus" VerticalAlignment="Center" Margin="16,0,0,0" Foreground="{StaticResource Sub}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Text="Widget Layout" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,12" Foreground="#FFEAEAEA"/>
+                    <Border Style="{StaticResource GlassCard}">
                         <StackPanel>
                             <WrapPanel>
-                                <Button Style="{StaticResource Ghost}" Content="Top left"      Tag="topLeft"      Click="Position_Click"/>
-                                <Button Style="{StaticResource Ghost}" Content="Top center"    Tag="topCenter"    Click="Position_Click"/>
-                                <Button Style="{StaticResource Ghost}" Content="Top right"     Tag="topRight"     Click="Position_Click"/>
-                                <Button Style="{StaticResource Ghost}" Content="Bottom left"   Tag="bottomLeft"   Click="Position_Click"/>
-                                <Button Style="{StaticResource Ghost}" Content="Bottom center" Tag="bottomCenter" Click="Position_Click"/>
-                                <Button Style="{StaticResource Ghost}" Content="Bottom right"  Tag="bottomRight"  Click="Position_Click"/>
+                                <Button Style="{StaticResource Ghost}" Content="Top Left"      Tag="topLeft"      Click="Position_Click"/>
+                                <Button Style="{StaticResource Ghost}" Content="Top Center"    Tag="topCenter"    Click="Position_Click"/>
+                                <Button Style="{StaticResource Ghost}" Content="Top Right"     Tag="topRight"     Click="Position_Click"/>
+                                <Button Style="{StaticResource Ghost}" Content="Bottom Left"   Tag="bottomLeft"   Click="Position_Click"/>
+                                <Button Style="{StaticResource Ghost}" Content="Bottom Center" Tag="bottomCenter" Click="Position_Click"/>
+                                <Button Style="{StaticResource Ghost}" Content="Bottom Right"  Tag="bottomRight"  Click="Position_Click"/>
                             </WrapPanel>
-                            <TextBlock x:Name="PositionNote" Foreground="{StaticResource Sub}" Margin="0,6,0,0"
-                                       Text="You can also drag the floating widget anywhere."/>
+                            <TextBlock x:Name="PositionNote" Foreground="{StaticResource Sub}" Margin="0,10,0,0" Text="You can also drag the floating widget anywhere on screen."/>
                         </StackPanel>
                     </Border>
 
-                    <Border Background="{StaticResource Card}" CornerRadius="12" Padding="18">
-                        <CheckBox x:Name="StartupCheck" Content="Launch Aqroflow when Windows starts"
-                                  Foreground="#FFEDEDED" Click="Startup_Click"/>
+                    <TextBlock Text="System" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,12" Foreground="#FFEAEAEA"/>
+                    <Border Style="{StaticResource GlassCard}">
+                        <CheckBox x:Name="StartupCheck" Content="Launch Aqroflow when Windows starts" Foreground="#FFEAEAEA" Click="Startup_Click"/>
+                    </Border>
+
+                    <TextBlock Text="Experience" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,12" Foreground="#FFEAEAEA"/>
+                    <Border Style="{StaticResource GlassCard}">
+                        <StackPanel>
+                            <CheckBox x:Name="TrayIconCheck" Content="Show icon in system tray (requires restart to take effect)" Foreground="#FFEAEAEA" Click="Experience_Click" Margin="0,0,0,12"/>
+                            <CheckBox x:Name="PlaySoundsCheck" Content="Play start/stop chimes when dictating" Foreground="#FFEAEAEA" Click="Experience_Click" Margin="0,0,0,12"/>
+                            <StackPanel Orientation="Horizontal">
+                                <CheckBox x:Name="AutoHideCheck" Content="Auto-fade widget when idle" Foreground="#FFEAEAEA" Click="Experience_Click" VerticalAlignment="Center"/>
+                                <TextBlock Text="Delay (sec):" Foreground="{StaticResource Sub}" Margin="20,0,8,0" VerticalAlignment="Center"/>
+                                <TextBox x:Name="AutoHideDelayBox" Width="50" Height="28" VerticalContentAlignment="Center" TextChanged="AutoHideDelay_Changed"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Text="AI Text Cleanup" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,12" Foreground="#FFEAEAEA"/>
+                    <Border Style="{StaticResource GlassCard}">
+                        <StackPanel>
+                            <CheckBox x:Name="CleanupCheck" Content="Enable AI text cleanup (remove fillers, fix punctuation)" Foreground="#FFEAEAEA" Click="Cleanup_Click"/>
+                            <TextBlock Text="Automatically removes 'um', 'uh', 'like', fixes punctuation, and handles speech self-corrections." Foreground="{StaticResource Sub}" Margin="0,8,0,0" TextWrapping="Wrap" FontSize="13"/>
+                            
+                            <Border BorderBrush="{StaticResource CardBorder}" BorderThickness="0,1,0,0" Margin="0,20" Padding="0,20,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="Ollama LLM (Optional — Studio Quality)" Foreground="#FFEAEAEA" FontWeight="SemiBold" Margin="0,0,0,12"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="Model:" VerticalAlignment="Center" Foreground="{StaticResource Sub}" Width="70"/>
+                                        <TextBox x:Name="OllamaModelBox" Width="200" Height="32" VerticalContentAlignment="Center" TextChanged="OllamaModel_Changed"/>
+                                    </StackPanel>
+                                    <TextBlock Text="Leave empty for rule-based cleanup. Examples: llama3.2:1b, phi3:mini" Foreground="{StaticResource Sub}" Margin="70,6,0,0" FontSize="12" TextWrapping="Wrap"/>
+        
+                                    <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                        <TextBlock Text="Endpoint:" VerticalAlignment="Center" Foreground="{StaticResource Sub}" Width="70"/>
+                                        <TextBox x:Name="OllamaEndpointBox" Width="280" Height="32" VerticalContentAlignment="Center" TextChanged="OllamaEndpoint_Changed"/>
+                                    </StackPanel>
+        
+                                    <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
+                                        <Button x:Name="TestOllamaBtn" Style="{StaticResource Ghost}" Content="Test Connection" Click="TestOllama_Click" Margin="0"/>
+                                        <TextBlock x:Name="OllamaStatus" VerticalAlignment="Center" Margin="16,0,0,0" Foreground="{StaticResource Sub}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Text="Context-Aware Dictation" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,12" Foreground="#FFEAEAEA"/>
+                    <Border Style="{StaticResource GlassCard}">
+                        <StackPanel>
+                            <TextBlock Text="Aqroflow automatically detects the active application when you start recording." Foreground="#FFEAEAEA" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                            <TextBlock Text="It applies appropriate formatting and AI cleanup (e.g. casual style for chat apps like Discord, formal for Outlook, and technical/code style for VS Code)." Foreground="{StaticResource Sub}" TextWrapping="Wrap" LineHeight="20"/>
+                        </StackPanel>
                     </Border>
                 </StackPanel>
             </ScrollViewer>
 
+            <!-- ===== DICTIONARY ===== -->
+            <StackPanel x:Name="PageDictionary" Visibility="Collapsed">
+                <TextBlock Text="Personal Dictionary" FontSize="26" FontWeight="Bold" Margin="0,0,0,4"/>
+                <TextBlock Text="Fix recurring misrecognitions. E.g. replace 'Acro' with 'Aqro'." Foreground="{StaticResource Sub}" Margin="0,0,0,24" TextWrapping="Wrap"/>
+
+                <Border Style="{StaticResource GlassCard}" Padding="18">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBox x:Name="DictSpokenBox" Width="180" Height="36" VerticalContentAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="→" VerticalAlignment="Center" Foreground="{StaticResource Sub}" FontSize="18" Margin="0,0,12,0"/>
+                        <TextBox x:Name="DictReplaceBox" Width="180" Height="36" VerticalContentAlignment="Center" Margin="0,0,12,0"/>
+                        <Button Style="{StaticResource Primary}" Content="Add Rule" Click="DictAdd_Click"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource GlassCard}" Padding="8" MaxHeight="320">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl x:Name="DictList" Padding="8">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#FF18181E" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,4">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Find}" Width="150" Foreground="#FFEAEAEA" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                            <TextBlock Text="→" Foreground="{StaticResource Sub}" Margin="12,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding Replace}" Width="150" Foreground="{StaticResource Accent}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                            <Button Style="{StaticResource Ghost}" Content="Remove" Tag="{Binding Find}" Click="DictRemove_Click" Margin="24,0,0,0" Padding="12,6" FontSize="12"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+            </StackPanel>
+
+            <!-- ===== SNIPPETS ===== -->
+            <StackPanel x:Name="PageSnippets" Visibility="Collapsed">
+                <TextBlock Text="Snippets" FontSize="26" FontWeight="Bold" Margin="0,0,0,4"/>
+                <TextBlock Text="Voice shortcuts that expand into longer text. Say the trigger phrase and it's replaced." Foreground="{StaticResource Sub}" Margin="0,0,0,24" TextWrapping="Wrap"/>
+
+                <Border Style="{StaticResource GlassCard}" Padding="20">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Trigger Phrase:" VerticalAlignment="Center" Foreground="{StaticResource Sub}" Width="110"/>
+                            <TextBox x:Name="SnipTriggerBox" Width="260" Height="36" VerticalContentAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                            <TextBlock Text="Expands to:" VerticalAlignment="Top" Foreground="{StaticResource Sub}" Width="110" Margin="0,8,0,0"/>
+                            <TextBox x:Name="SnipExpansionBox" Width="360" Height="80" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
+                        </StackPanel>
+                        <Button Style="{StaticResource Primary}" Content="Add Snippet" Click="SnipAdd_Click" Margin="110,20,0,0" HorizontalAlignment="Left"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource GlassCard}" Padding="8" MaxHeight="240">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl x:Name="SnipList" Padding="8">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#FF18181E" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,4">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Trigger}" Width="150" Foreground="{StaticResource Accent}" VerticalAlignment="Center" FontWeight="Bold"/>
+                                            <TextBlock Text="→" Foreground="{StaticResource Sub}" Margin="12,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding Expansion}" Width="260" Foreground="#FFEAEAEA" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                            <Button Style="{StaticResource Ghost}" Content="Remove" Tag="{Binding Trigger}" Click="SnipRemove_Click" Margin="24,0,0,0" Padding="12,6" FontSize="12"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+            </StackPanel>
+
+            <!-- ===== HISTORY ===== -->
+            <DockPanel x:Name="PageHistory" Visibility="Collapsed">
+                <StackPanel DockPanel.Dock="Top">
+                    <TextBlock Text="History" FontSize="26" FontWeight="Bold" Margin="0,0,0,4"/>
+                    <TextBlock Text="Past transcriptions — click any entry to copy it to clipboard." Foreground="{StaticResource Sub}" Margin="0,0,0,24" TextWrapping="Wrap"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                        <TextBox x:Name="HistorySearchBox" Width="320" Height="36" VerticalContentAlignment="Center" TextChanged="HistorySearch_Changed" Tag="Search history..."/>
+                        <Button Style="{StaticResource Ghost}" Content="Clear History" Click="HistoryClear_Click" Margin="16,0,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,0,-12,0" Padding="0,0,12,0">
+                    <ItemsControl x:Name="HistoryList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#FF18181E" BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,12" Cursor="Hand" MouseLeftButtonUp="HistoryItem_Click" Tag="{Binding CleanedText}">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                            <TextBlock Text="{Binding TimeDisplay}" Foreground="{StaticResource Accent}" FontSize="12" FontWeight="SemiBold"/>
+                                            <TextBlock Text=" • " Foreground="{StaticResource Sub}" FontSize="12" Margin="6,0"/>
+                                            <TextBlock Text="{Binding WordCount, StringFormat='{}{0} words'}" Foreground="{StaticResource Sub}" FontSize="12"/>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding Preview}" TextWrapping="Wrap" Foreground="#FFEAEAEA" FontSize="14" LineHeight="22"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+
             <!-- ===== ABOUT ===== -->
             <StackPanel x:Name="PageAbout" Visibility="Collapsed">
-                <TextBlock Text="About" FontSize="22" FontWeight="SemiBold" Margin="0,0,0,20"/>
-                <Border Background="{StaticResource Card}" CornerRadius="12" Padding="24">
+                <TextBlock Text="About" FontSize="26" FontWeight="Bold" Margin="0,0,0,24"/>
+                <Border Style="{StaticResource GlassCard}" Padding="32">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                            <Path Fill="{StaticResource Accent}" Stretch="Uniform" Width="30" Height="27"
-                                  Data="M0,0 H295 V265 H140 V155 H0 Z"/>
-                            <StackPanel Margin="16,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="Aqroflow" FontSize="20" FontWeight="SemiBold"/>
-                                <TextBlock x:Name="VersionText" Text="v1.0" Foreground="{StaticResource Sub}"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,24">
+                            <Path Fill="{StaticResource AccentGrad}" Stretch="Uniform" Width="36" Height="34" Data="M0,0 H295 V265 H140 V155 H0 Z"/>
+                            <StackPanel Margin="20,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="Aqroflow" FontSize="26" FontWeight="Bold"/>
+                                <TextBlock x:Name="VersionText" Text="v1.0" Foreground="{StaticResource Accent}" FontWeight="SemiBold" Margin="0,4,0,0"/>
                             </StackPanel>
                         </StackPanel>
-                        <TextBlock TextWrapping="Wrap" Foreground="#FFCFCFD4" Margin="0,0,0,10"
-                                   Text="Free, local voice dictation for Windows. Speak anywhere and your words are typed into whatever app you last clicked. Fully offline — no cloud, no accounts, no cost."/>
-                        <TextBlock TextWrapping="Wrap" Foreground="{StaticResource Sub}"
-                                   Text="Built with .NET / WPF, Whisper.net (whisper.cpp) and NAudio. Models by OpenAI Whisper, quantized by ggerganov/whisper.cpp."/>
+                        <TextBlock TextWrapping="Wrap" Foreground="#FFEAEAEA" Margin="0,0,0,16" FontSize="15" LineHeight="24" Text="Free, offline voice dictation for Windows. Speak anywhere and your words are typed into whatever app you last clicked. Fully private — no cloud, no accounts, no subscriptions."/>
+                        <TextBlock TextWrapping="Wrap" Foreground="{StaticResource Sub}" FontSize="13" LineHeight="22" Text="Built with .NET 8 / WPF, Whisper.net (whisper.cpp) and NAudio. Models by OpenAI Whisper, quantized by ggerganov/whisper.cpp."/>
                     </StackPanel>
                 </Border>
             </StackPanel>

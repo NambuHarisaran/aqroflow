@@ -18,9 +18,11 @@ public static class ModelStore
         new("tiny.en",  "Tiny · English · fastest",       "ggml-tiny.en-q5_1.bin",  false, "~32 MB"),
         new("base.en",  "Base · English · balanced",      "ggml-base.en-q5_1.bin",  false, "~60 MB"),
         new("small.en", "Small · English · most accurate","ggml-small.en-q5_1.bin", false, "~190 MB"),
+        new("medium.en","Medium · English · high quality","ggml-medium.en-q5_0.bin",false, "~550 MB"),
         new("tiny",     "Tiny · multilingual",            "ggml-tiny-q5_1.bin",     true,  "~32 MB"),
         new("base",     "Base · multilingual",            "ggml-base-q5_1.bin",     true,  "~60 MB"),
         new("small",    "Small · multilingual · best",    "ggml-small-q5_1.bin",    true,  "~190 MB"),
+        new("medium",   "Medium · multilingual · quality","ggml-medium-q5_0.bin",   true,  "~550 MB"),
     };
 
     public static ModelInfo GetById(string id) =>

@@ -6,6 +6,8 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
+using System.Media;
 
 namespace Aqroflow;
 
@@ -13,26 +15,38 @@ public partial class MainWindow : Window
 {
     private enum WidgetState { Loading, Idle, Recording, Transcribing, Error }
 
-    private const double CircleWidth = 52;
+    private const double CircleWidth = 54;
     private const double RecordingWidth = 128;
     private const double HoverScale = 1.14;
 
-    private static readonly Color OrangeColor = (Color)ColorConverter.ConvertFromString("#FFF2A93C");
+    private static readonly Color OrangeColor = (Color)ColorConverter.ConvertFromString("#FFF5A623");
     private static readonly Color DimColor = (Color)ColorConverter.ConvertFromString("#FF6E6E72");
 
     private readonly AudioRecorder _recorder = new();
     private readonly WhisperTranscriber _transcriber = new();
     private readonly AppSettings _settings = AppSettings.Load();
+    private readonly PersonalDictionary _dictionary = PersonalDictionary.Load();
+    private readonly SnippetStore _snippets = SnippetStore.Load();
+    private readonly TranscriptionHistory _history = TranscriptionHistory.Load();
+    private readonly StyleManager _styles = StyleManager.Load();
+    private ActiveAppDetector.AppCategory _activeAppCategory = ActiveAppDetector.AppCategory.Unknown;
     private GlobalHotkey? _hotkey;
+    private TrayIconManager? _tray;
     private DashboardWindow? _dashboard;
     private WidgetState _state = WidgetState.Loading;
     private bool _isHovered;
+    private DispatcherTimer? _autoHideTimer;
+    private DateTime _lastActivityTime = DateTime.UtcNow;
 
     // ---- public API used by the dashboard window ----
 
     public struct Stats { public int Count; public int Words; public string Last; }
 
     public AppSettings Settings => _settings;
+    public PersonalDictionary Dictionary => _dictionary;
+    public SnippetStore Snippets => _snippets;
+    public TranscriptionHistory History => _history;
+    public StyleManager Styles => _styles;
     public Stats CurrentStats { get; private set; } = new() { Last = "" };
     public event Action<Stats>? StatsChanged;
     public bool IsRecording => _state == WidgetState.Recording;
@@ -70,6 +84,8 @@ public partial class MainWindow : Window
         _recorder.LevelChanged += level => Dispatcher.BeginInvoke(() => UpdateLevel(level));
         BuildAnimations();
         BuildContextMenu();
+        SetupAutoHide();
+        SetupTray();
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -97,6 +113,9 @@ public partial class MainWindow : Window
         {
             if (_state == WidgetState.Idle)
             {
+                ResetAutoHide();
+                PlayStartSound();
+                _activeAppCategory = ActiveAppDetector.GetActiveApp().category;
                 _recorder.Start(stopOnSilence: false);
                 SetState(WidgetState.Recording);
             }
@@ -203,6 +222,7 @@ public partial class MainWindow : Window
     private void Pill_MouseEnter(object sender, MouseEventArgs e)
     {
         _isHovered = true;
+        ResetAutoHide();
         if (_state == WidgetState.Idle) AnimateScale(HoverScale);
     }
 
@@ -279,6 +299,9 @@ public partial class MainWindow : Window
         switch (_state)
         {
             case WidgetState.Idle:
+                ResetAutoHide();
+                PlayStartSound();
+                _activeAppCategory = ActiveAppDetector.GetActiveApp().category;
                 _recorder.Start();
                 SetState(WidgetState.Recording);
                 break;
@@ -291,7 +314,13 @@ public partial class MainWindow : Window
     private async void StopAndTranscribe()
     {
         if (_state != WidgetState.Recording) return;
+        var recordingStart = DateTime.UtcNow;
         var samples = _recorder.Stop();
+
+        // sound feedback: stop chime
+        if (_settings.PlaySounds)
+            SystemSounds.Asterisk.Play();
+
         // under ~0.4s of audio is a misclick, not dictation
         if (samples.Length < 16000 * 2 / 5)
         {
@@ -302,13 +331,30 @@ public partial class MainWindow : Window
         SetState(WidgetState.Transcribing);
         try
         {
-            var text = await Task.Run(() => _transcriber.TranscribeAsync(samples));
-            if (!string.IsNullOrWhiteSpace(text))
+            var rawText = await Task.Run(() => _transcriber.TranscribeAsync(samples));
+            if (!string.IsNullOrWhiteSpace(rawText))
             {
+                // AI cleanup: remove fillers, fix punctuation, handle self-corrections
+                // Context-aware: style varies by active app (chat=casual, email=formal, etc.)
+                var style = _styles.GetStyle(_activeAppCategory);
+                var text = await TextPostProcessor.CleanAsync(rawText, _settings, style);
+
+                // Personal dictionary: fix recurring misrecognitions
+                text = _dictionary.Apply(text);
+
+                // Snippets: expand voice shortcuts
+                text = _snippets.Apply(text);
+
                 await TextInjector.PasteAsync(text);
+
+                // Record in history
+                var durationMs = (long)(DateTime.UtcNow - recordingStart).TotalMilliseconds;
+                var wordCount = text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+                _history.Add(rawText, text, wordCount, durationMs);
+
                 var s = CurrentStats;
                 s.Count++;
-                s.Words += text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+                s.Words += wordCount;
                 s.Last = text;
                 CurrentStats = s;
                 StatsChanged?.Invoke(s);
@@ -371,8 +417,8 @@ public partial class MainWindow : Window
                 break;
 
             case WidgetState.Idle:
-                LogoPath.Fill = new SolidColorBrush(OrangeColor);
-                SetGlow(Colors.Black, 14, 0.5);
+                LogoPath.Fill = (System.Windows.Media.Brush)FindResource("AccentGrad");
+                SetGlow(Colors.Black, 18, 0.4);
                 AnimateWidth(CircleWidth);
                 AnimateScale(_isHovered ? HoverScale : 1.0);
                 Pill.ToolTip = IdleTooltip();
@@ -381,7 +427,7 @@ public partial class MainWindow : Window
             case WidgetState.Recording:
                 LogoPath.Visibility = Visibility.Collapsed;
                 Waveform.Visibility = Visibility.Visible;
-                SetGlow(OrangeColor, 22, 0.75);
+                SetGlow(OrangeColor, 22, 0.6);
                 AnimateScale(1.0);
                 AnimateWidth(RecordingWidth);
                 _pulseStoryboard?.Begin();
@@ -391,7 +437,7 @@ public partial class MainWindow : Window
             case WidgetState.Transcribing:
                 LogoPath.Visibility = Visibility.Collapsed;
                 Spinner.Visibility = Visibility.Visible;
-                SetGlow(OrangeColor, 16, 0.6);
+                SetGlow(OrangeColor, 16, 0.5);
                 AnimateScale(1.0);
                 AnimateWidth(CircleWidth);
                 _spinStoryboard?.Begin();
@@ -468,9 +514,56 @@ public partial class MainWindow : Window
     private void Exit_Click(object sender, RoutedEventArgs e)
     {
         _hotkey?.Dispose();
+        _tray?.Dispose();
+        _autoHideTimer?.Stop();
         _recorder.Stop();
         _transcriber.Dispose();
         Application.Current.Shutdown();
+    }
+
+    // ---- auto-hide ----
+
+    private void SetupAutoHide()
+    {
+        _autoHideTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        _autoHideTimer.Tick += (_, _) =>
+        {
+            if (!_settings.AutoHide || _state != WidgetState.Idle || _isHovered) return;
+            if ((DateTime.UtcNow - _lastActivityTime).TotalSeconds >= _settings.AutoHideDelaySeconds)
+                AnimateOpacity(0.15);
+        };
+        _autoHideTimer.Start();
+    }
+
+    private void ResetAutoHide()
+    {
+        _lastActivityTime = DateTime.UtcNow;
+        if (Opacity < 1.0)
+            AnimateOpacity(1.0);
+    }
+
+    private void AnimateOpacity(double target)
+    {
+        var anim = new DoubleAnimation(target, TimeSpan.FromMilliseconds(400))
+        { EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut } };
+        BeginAnimation(OpacityProperty, anim);
+    }
+
+    // ---- tray icon ----
+
+    private void SetupTray()
+    {
+        if (!_settings.ShowTrayIcon) return;
+        _tray = new TrayIconManager(this);
+        _tray.Install();
+    }
+
+    // ---- sound feedback ----
+
+    private void PlayStartSound()
+    {
+        if (_settings.PlaySounds)
+            SystemSounds.Exclamation.Play();
     }
 
     // ---- win32 ----

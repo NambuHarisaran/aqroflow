@@ -5,20 +5,32 @@
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         Topmost="True" ShowInTaskbar="False" ShowActivated="False"
         ResizeMode="NoResize" Loaded="Window_Loaded">
+
+    <Window.Resources>
+        <LinearGradientBrush x:Key="AccentGrad" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#FFF5A623" Offset="0"/>
+            <GradientStop Color="#FFFA6E32" Offset="1"/>
+        </LinearGradientBrush>
+    </Window.Resources>
+
     <Grid>
         <!-- pulse ring behind the pill, shown while recording -->
-        <Ellipse x:Name="PulseRing" Width="52" Height="52"
-                 Stroke="#FFF2A93C" StrokeThickness="2.5" Opacity="0"
+        <Ellipse x:Name="PulseRing" Width="54" Height="54"
+                 Stroke="{StaticResource AccentGrad}" StrokeThickness="2.5" Opacity="0"
                  IsHitTestVisible="False" HorizontalAlignment="Center" VerticalAlignment="Center"
                  RenderTransformOrigin="0.5,0.5">
             <Ellipse.RenderTransform>
                 <ScaleTransform ScaleX="1" ScaleY="1"/>
             </Ellipse.RenderTransform>
+            <Ellipse.Effect>
+                <DropShadowEffect BlurRadius="8" ShadowDepth="0" Color="#FFF5A623" Opacity="0.6"/>
+            </Ellipse.Effect>
         </Ellipse>
 
         <!-- the pill / button -->
-        <Border x:Name="Pill" Width="52" Height="52" CornerRadius="26"
-                Background="#FF1C1C1F" Cursor="Hand"
+        <Border x:Name="Pill" Width="54" Height="54" CornerRadius="27"
+                Background="#FF101014" BorderBrush="#33FFFFFF" BorderThickness="1"
+                Cursor="Hand"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 RenderTransformOrigin="0.5,0.5"
                 MouseLeftButtonDown="Pill_MouseLeftButtonDown"
@@ -31,30 +43,29 @@
                 <ScaleTransform x:Name="PillScale" ScaleX="1" ScaleY="1"/>
             </Border.RenderTransform>
             <Border.Effect>
-                <DropShadowEffect x:Name="PillShadow" BlurRadius="14" ShadowDepth="0"
-                                  Color="#000000" Opacity="0.5"/>
+                <DropShadowEffect x:Name="PillShadow" BlurRadius="20" ShadowDepth="4" Color="#000000" Opacity="0.4"/>
             </Border.Effect>
 
             <Grid>
                 <!-- Aqro logo mark (idle / hover) -->
-                <Path x:Name="LogoPath" Fill="#FFF2A93C" Stretch="Uniform"
+                <Path x:Name="LogoPath" Fill="{StaticResource AccentGrad}" Stretch="Uniform"
                       Width="20" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"
                       Data="M0,0 H295 V265 H140 V155 H0 Z"/>
 
                 <!-- recording waveform (Wispr Flow style bars) -->
                 <StackPanel x:Name="Waveform" Orientation="Horizontal" Visibility="Collapsed"
                             HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Rectangle Width="3" Height="6" Margin="2,0" RadiusX="1.5" RadiusY="1.5" Fill="#FFF2A93C"/>
-                    <Rectangle Width="3" Height="6" Margin="2,0" RadiusX="1.5" RadiusY="1.5" Fill="#FFF2A93C"/>
-                    <Rectangle Width="3" Height="6" Margin="2,0" RadiusX="1.5" RadiusY="1.5" Fill="#FFF2A93C"/>
-                    <Rectangle Width="3" Height="6" Margin="2,0" RadiusX="1.5" RadiusY="1.5" Fill="#FFF2A93C"/>
-                    <Rectangle Width="3" Height="6" Margin="2,0" RadiusX="1.5" RadiusY="1.5" Fill="#FFF2A93C"/>
-                    <Rectangle Width="3" Height="6" Margin="2,0" RadiusX="1.5" RadiusY="1.5" Fill="#FFF2A93C"/>
-                    <Rectangle Width="3" Height="6" Margin="2,0" RadiusX="1.5" RadiusY="1.5" Fill="#FFF2A93C"/>
+                    <Rectangle Width="3" Height="6" Margin="2,0" RadiusX="1.5" RadiusY="1.5" Fill="#FFF5A623"/>
+                    <Rectangle Width="3" Height="6" Margin="2,0" RadiusX="1.5" RadiusY="1.5" Fill="#FFFA6E32"/>
+                    <Rectangle Width="3" Height="6" Margin="2,0" RadiusX="1.5" RadiusY="1.5" Fill="#FFF5A623"/>
+                    <Rectangle Width="3" Height="6" Margin="2,0" RadiusX="1.5" RadiusY="1.5" Fill="#FFFA6E32"/>
+                    <Rectangle Width="3" Height="6" Margin="2,0" RadiusX="1.5" RadiusY="1.5" Fill="#FFF5A623"/>
+                    <Rectangle Width="3" Height="6" Margin="2,0" RadiusX="1.5" RadiusY="1.5" Fill="#FFFA6E32"/>
+                    <Rectangle Width="3" Height="6" Margin="2,0" RadiusX="1.5" RadiusY="1.5" Fill="#FFF5A623"/>
                 </StackPanel>
 
                 <!-- transcribing spinner -->
-                <Ellipse x:Name="Spinner" Width="24" Height="24" Stroke="#FFF2A93C" StrokeThickness="3"
+                <Ellipse x:Name="Spinner" Width="26" Height="26" Stroke="{StaticResource AccentGrad}" StrokeThickness="3"
                          StrokeDashArray="6 20" StrokeDashCap="Round" Visibility="Collapsed"
                          RenderTransformOrigin="0.5,0.5">
                     <Ellipse.RenderTransform>

@@ -24,6 +24,31 @@ public class AppSettings
     /// <summary>Start Aqroflow automatically on Windows login.</summary>
     public bool LaunchOnStartup { get; set; } = false;
 
+    // ---- Phase 1: AI Cleanup ----
+
+    /// <summary>Enable post-processing of transcriptions (rule-based filler removal, punctuation, etc.).</summary>
+    public bool EnableAICleanup { get; set; } = true;
+
+    /// <summary>Ollama model name for LLM-powered cleanup. Empty = rule-based only.</summary>
+    public string OllamaModel { get; set; } = "";
+
+    /// <summary>Ollama API endpoint.</summary>
+    public string OllamaEndpoint { get; set; } = "http://localhost:11434";
+
+    // ---- Phase 3: UX Polish ----
+
+    /// <summary>Show system tray icon.</summary>
+    public bool ShowTrayIcon { get; set; } = true;
+
+    /// <summary>Auto-hide (fade) the floating widget after idle.</summary>
+    public bool AutoHide { get; set; } = true;
+
+    /// <summary>Seconds of idle before auto-hiding the widget.</summary>
+    public int AutoHideDelaySeconds { get; set; } = 10;
+
+    /// <summary>Play start/stop sounds for dictation.</summary>
+    public bool PlaySounds { get; set; } = true;
+
     private static string SettingsPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "Aqroflow", "settings.json");
